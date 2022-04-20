@@ -1,1 +1,1 @@
-export * from "./GithubProvider";
+export * from "./src/index";
