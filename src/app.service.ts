@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Octokit } from '@octokit/rest';
+import { of } from 'rxjs';
 
 export interface GithubOptions {
   userAgent?: string;
@@ -34,8 +35,18 @@ export class AppService {
     });
   }
 
+  getInitialized(): boolean {
+    return !!this.api;
+  }
+
   getData() {
-    return this.getAssignedIssues();
+    if (this.getInitialized()) {
+      return this.getAssignedIssues();
+    } else {
+      return of({
+        data: [{ message: 'Github Feed not initialized', icon: ICON_PATH }],
+      });
+    }
   }
 
   /**
@@ -43,20 +54,36 @@ export class AppService {
    */
   async getAssignedIssues(): Promise<any> {
     return new Promise(async (resolve) => {
-      const issues = (
-        await this.api.issues.list({ filter: 'assigned' })
-      ).data.filter(
-        (issue) => !this.hasLabel(issue, this.settings.excludeWithLabel),
-      );
+      let issues: any = await this.api.issues
+        .list({ filter: 'assigned' })
+        .catch((error) => {
+          console.error(error);
+          return undefined;
+        });
 
-      const items = issues.map((issue) => {
-        return {
-          message: `[${issue.repository.name} #${issue.number}] ${issue.title}`,
-          icon: ICON_PATH,
-        };
+      if (issues) {
+        issues = issues.data.filter(
+          (issue) => !this.hasLabel(issue, this.settings.excludeWithLabel),
+        );
+
+        const items = issues.map((issue) => {
+          return {
+            message: `[${issue.repository.name} #${issue.number}] ${issue.title}`,
+            icon: ICON_PATH,
+          };
+        });
+
+        resolve({ data: items });
+      }
+
+      resolve({
+        data: [
+          {
+            message: 'An error occured. Please check server',
+            icon: ICON_PATH,
+          },
+        ],
       });
-
-      resolve({ data: items });
     });
   }
 
