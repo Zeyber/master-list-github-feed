@@ -1,6 +1,6 @@
 {
   "name": "@zeyber/master-list-github-provider",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Master List Feed for Assigned Github Issues",
   "author": "Caine Rotherham",
   "scripts": {
